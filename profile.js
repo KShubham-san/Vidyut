@@ -2,28 +2,37 @@ import { db, auth } from "./firebase.js";
 import { doc, setDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 
-// Debugging Logs
-console.log("profile.js is loaded!");
+// Check if profile.js is loading
+console.log("✅ profile.js loaded!");
 
-// Wait for DOM to Load
+// Wait for the page to fully load before attaching event listeners
 document.addEventListener("DOMContentLoaded", () => {
-    document.querySelector(".btn").addEventListener("click", saveProfile);
-    console.log("Event listener attached!");
+    const saveButton = document.getElementById("save-btn"); // Using ID instead of class
+
+    if (!saveButton) {
+        console.error("❌ Save button NOT found!");
+        alert("Error: Save button not found!");
+        return;
+    }
+
+    console.log("✅ Save button found!");
+    saveButton.addEventListener("click", saveProfile);
 });
 
-// Check Authentication
+// Check if the user is logged in
 onAuthStateChanged(auth, (user) => {
     if (!user) {
-        console.log("No user found! Redirecting...");
+        console.log("❌ No user found! Redirecting to login...");
+        alert("You need to be logged in!");
         window.location.href = "login.html";
     } else {
-        console.log("User found:", user.uid);
+        console.log("✅ User found:", user.uid);
     }
 });
 
-// Save Profile Data
+// Function to save profile data
 async function saveProfile() {
-    console.log("Save button clicked!");  // Check if this logs
+    console.log("✅ Save button clicked!");
 
     const name = document.getElementById("name").value.trim();
     const dob = document.getElementById("dob").value;
@@ -34,23 +43,23 @@ async function saveProfile() {
     const dailyTarget = document.getElementById("daily-target").value.trim();
 
     if (!name || !dob || !gender || !stream || !studentClass || !dailyTarget) {
-        alert("Please fill all required fields!");
+        alert("⚠️ Please fill all required fields!");
         return;
     }
 
     const user = auth.currentUser;
     if (!user) {
-        alert("User not logged in! Redirecting...");
+        alert("❌ User not logged in! Redirecting...");
         window.location.href = "login.html";
         return;
     }
 
     try {
         await setDoc(doc(db, "users", user.uid), { name, dob, phone, gender, stream, studentClass, dailyTarget });
-        alert("Profile saved successfully!");
+        alert("✅ Profile saved successfully!");
         window.location.href = "dashboard.html";
     } catch (error) {
-        console.error("Error saving profile:", error);
-        alert("Failed to save profile. Try again.");
+        console.error("❌ Error saving profile:", error);
+        alert("❌ Failed to save profile. Try again.");
     }
 }
