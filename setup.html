@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Setup - Vidyut ⚡️</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 10px;
+            width: 350px;
+            text-align: center;
+        }
+
+        h2 {
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .profile-pic-container {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin: 0 auto 1rem;
+            border: 2px solid #ffd700;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #333;
+        }
+
+        .profile-pic-container img {
+            width: 80%;
+            height: 80%;
+            object-fit: contain;
+            display: block;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        input::placeholder {
+            color: #bbb;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border: 1px solid #ffd700;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            background-color: #ffd700;
+            color: #121212;
+            border: none;
+            font-size: 1.2rem;
+            font-weight: 600;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0px 4px 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .back-btn {
+            background: none;
+            color: #ffd700;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 10px;
+        }
+
+        .back-btn:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Profile Setup</h2>
+        <div class="profile-pic-container">
+            <img id="profile-pic" src="https://cdn-icons-png.flaticon.com/512/847/847969.png" alt="Profile Picture">
+        </div>
+        <input type="file" id="upload-pic" accept="image/*" onchange="previewImage(event)">
+        <input type="text" id="name" placeholder="Name" required>
+        <input type="date" id="dob" min="2005-01-01" max="2015-12-31" required placeholder="Date of Birth">
+        <select id="gender" required>
+            <option value="" disabled selected>Gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+        </select>
+        <select id="class" required>
+            <option value="" disabled selected>Class</option>
+            <option value="11">11</option>
+            <option value="12">12</option>
+            <option value="Dropper">Dropper</option>
+        </select>
+        <select id="stream" required>
+            <option value="" disabled selected>Stream</option>
+            <option value="Engineering">Engineering</option>
+            <option value="Medical">Medical</option>
+        </select>
+        <select id="study-target" required>
+            <option value="" disabled selected>Daily Study Target</option>
+            <option value="5">5 Hours</option>
+            <option value="6">6 Hours</option>
+            <option value="7">7 Hours</option>
+            <option value="8">8 Hours</option>
+            <option value="9">9 Hours</option>
+            <option value="10">10 Hours</option>
+            <option value="11">11 Hours</option>
+            <option value="12">12 Hours</option>
+            <option value="13">13 Hours</option>
+            <option value="14">14 Hours</option>
+            <option value="15">15 Hours</option>
+        </select>
+
+        <button class="btn" onclick="saveProfile()">Save</button>
+        <button class="back-btn" onclick="goBack()">Back</button>
+    </div>
+
+    <script>
+        function previewImage(event) {
+            const reader = new FileReader();
+            reader.onload = function(){
+                const imgElement = document.getElementById('profile-pic');
+                imgElement.src = reader.result;
+            }
+            reader.readAsDataURL(event.target.files[0]);
+        }
+
+        function saveProfile() {
+            const name = document.getElementById("name").value.trim();
+            const gender = document.getElementById("gender").value;
+            const dob = document.getElementById("dob").value;
+            const classValue = document.getElementById("class").value;
+            const stream = document.getElementById("stream").value;
+            const studyTarget = document.getElementById("study-target").value;
+
+            if (!name || !gender || !dob || !classValue || !stream || !studyTarget) {
+                alert("Please fill all required fields!");
+                return;
+            }
+
+            // Save to local storage or Firebase (placeholder)
+            localStorage.setItem("userProfile", JSON.stringify({
+                name, gender, dob, classValue, stream, studyTarget
+            }));
+
+            window.location.href = "dashboard.html";
+        }
+
+        function goBack() {
+            window.location.href = "vidyut_auth.html";
+        }
+    </script>
+</body>
+</html>
