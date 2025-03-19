@@ -1,4 +1,5 @@
-import { db, auth } from "./firebase.js";
+alert("🔥 profile.js is running!");
+console.log("🔥 profile.js is running!");import { db, auth } from "./firebase.js";
 import { doc, setDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 
