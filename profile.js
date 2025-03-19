@@ -1,14 +1,12 @@
-alert("🔥 profile.js is running!");
 import { db, auth } from "./firebase.js";
 import { doc, setDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 
-// Check if profile.js is loading
-console.log("✅ profile.js loaded!");
+// Debugging - Check if profile.js is loaded
+console.log("✅ profile.js is running!");
 
-// Wait for the page to fully load before attaching event listeners
 document.addEventListener("DOMContentLoaded", () => {
-    const saveButton = document.getElementById("save-btn"); // Using ID instead of class
+    const saveButton = document.getElementById("save-btn");
 
     if (!saveButton) {
         console.error("❌ Save button NOT found!");
@@ -31,7 +29,7 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-// Function to save profile data
+// Save Profile Data
 async function saveProfile() {
     console.log("✅ Save button clicked!");
 
