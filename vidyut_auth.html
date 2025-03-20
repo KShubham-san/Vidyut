@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidyut ⚡️ - Login</title>
+    <title>Vidyut ⚡ - Login</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
 
@@ -40,7 +40,7 @@
         input, select {
             width: 100%;
             padding: 10px;
-            margin: 10px 0;
+            margin: 5px 0;
             border: none;
             border-radius: 5px;
             font-size: 1rem;
@@ -87,30 +87,48 @@
         a:hover {
             text-decoration: underline;
         }
+
+        label {
+            display: block;
+            text-align: left;
+            font-size: 0.9rem;
+            color: #bbb;
+            margin-top: 8px;
+        }
+
+        #profile-fields {
+            display: none;
+        }
     </style>
 </head>
 <body>
-    <h1>Vidyut ⚡️</h1>
-    <div class="container" id="form-container">
+    <h1>Vidyut ⚡</h1>
+    <div class="container">
         <h2 id="form-title">Login</h2>
         <input type="email" placeholder="Email" id="email">
         <input type="password" placeholder="Password" id="password">
         <input type="text" placeholder="Username" id="username" style="display: none;">
         
-        <!-- Profile Fields (Only shown in Register mode) -->
-        <div id="profile-fields" style="display: none;">
-            <input type="date" id="dob" placeholder="Date of Birth">
+        <div id="profile-fields">
+            <label for="dob">📅 Date of Birth</label>
+            <input type="date" id="dob">
+
+            <label for="gender">🚻 Gender</label>
             <select id="gender">
                 <option value="" disabled selected>👤 Select Gender</option>
                 <option value="Male">👦 Male</option>
                 <option value="Female">👩 Female</option>
                 <option value="Other">⚧ Other</option>
             </select>
+
+            <label for="stream">📖 Stream</label>
             <select id="stream">
                 <option value="" disabled selected>📖 Select Stream</option>
                 <option value="Engineering">🛠 Engineering</option>
                 <option value="Medical">⚕ Medical</option>
             </select>
+
+            <label for="class">🏫 Class</label>
             <select id="class">
                 <option value="" disabled selected>🏫 Select Class</option>
                 <option value="Class 9">📚 Class 9</option>
@@ -119,11 +137,13 @@
                 <option value="Class 12">📖 Class 12</option>
                 <option value="Dropper">🎯 Dropper</option>
             </select>
-            <input type="number" id="daily-target" min="1" max="24" placeholder="⏳ Daily Study Target (hrs)">
+
+            <label for="daily-target">⏳ Daily Study Target (hrs)</label>
+            <input type="number" id="daily-target" min="1" max="24" placeholder="⏳ Enter Hours">
         </div>
 
-        <button class="btn" id="auth-button" onclick="login()">Login</button>
-        <p class="switch-text" id="switch-text">New here? <a href="#" onclick="toggleForm(event)">Create an account</a></p>
+        <button class="btn" id="auth-button">Login</button>
+        <p class="switch-text"><a href="#" id="toggle-form">Create an account</a></p>
     </div>
 
     <script type="module">
@@ -131,78 +151,42 @@
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
         import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        const firebaseConfig = { /* Your Firebase Config Here */ };
+        const firebaseConfig = {
+            apiKey: "AIzaSyBK6ERxBeqllVW70VwMYs5Pss9oMGhShX8",
+            authDomain: "vidyut-b88c5.firebaseapp.com",
+            projectId: "vidyut-b88c5",
+            storageBucket: "vidyut-b88c5.firebasestorage.app",
+            messagingSenderId: "552051945759",
+            appId: "1:552051945759:web:79038ee244d63ba38bc02a"
+        };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        let isRegisterMode = false;
+
+        document.getElementById("toggle-form").addEventListener("click", function(event) {
+            event.preventDefault();
+            isRegisterMode = !isRegisterMode;
+
+            document.getElementById("form-title").innerText = isRegisterMode ? "Register" : "Login";
+            document.getElementById("auth-button").innerText = isRegisterMode ? "Register" : "Login";
+            document.getElementById("auth-button").onclick = isRegisterMode ? register : login;
+            document.getElementById("toggle-form").innerText = isRegisterMode ? "Already have an account? Login" : "New here? Create an account";
+            document.getElementById("username").style.display = isRegisterMode ? "block" : "none";
+            document.getElementById("profile-fields").style.display = isRegisterMode ? "block" : "none";
+        });
+
         async function register() {
-            const email = document.getElementById("email").value;
-            const password = document.getElementById("password").value;
-            const username = document.getElementById("username").value;
-            const dob = document.getElementById("dob").value;
-            const gender = document.getElementById("gender").value;
-            const stream = document.getElementById("stream").value;
-            const studentClass = document.getElementById("class").value;
-            const dailyTarget = document.getElementById("daily-target").value.trim();
-
-            if (!username || !dob || !gender || !stream || !studentClass || !dailyTarget) {
-                alert("⚠️ Please fill all required fields!");
-                return;
-            }
-
-            try {
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                const user = userCredential.user;
-
-                await setDoc(doc(db, "users", user.uid), {
-                    username, email, dob, gender, stream, class: studentClass, dailyTarget
-                });
-
-                localStorage.setItem("username", username);
-                localStorage.setItem("dob", dob);
-                localStorage.setItem("gender", gender);
-                localStorage.setItem("stream", stream);
-                localStorage.setItem("class", studentClass);
-                localStorage.setItem("dailyTarget", dailyTarget);
-
-                alert("✅ Registration successful!");
-                window.location.href = "dashboard.html";
-
-            } catch (error) {
-                alert("❌ Error: " + error.message);
-            }
+            alert("✅ Register function called!");
         }
 
-        function toggleForm(event) {
-            event.preventDefault(); // ✅ Fix for `<a>` issues
-
-            const formTitle = document.getElementById("form-title");
-            const authButton = document.getElementById("auth-button");
-            const switchText = document.getElementById("switch-text");
-            const usernameField = document.getElementById("username");
-            const profileFields = document.getElementById("profile-fields");
-
-            if (formTitle.innerText === "Login") {
-                formTitle.innerText = "Register";
-                authButton.innerText = "Register";
-                authButton.setAttribute("onclick", "register()");
-                switchText.innerHTML = `Already have an account? <a href="#" onclick="toggleForm(event)">Login</a>`;
-                usernameField.style.display = "block";
-                profileFields.style.display = "block";
-            } else {
-                formTitle.innerText = "Login";
-                authButton.innerText = "Login";
-                authButton.setAttribute("onclick", "login()");
-                switchText.innerHTML = `New here? <a href="#" onclick="toggleForm(event)">Create an account</a>`;
-                usernameField.style.display = "none";
-                profileFields.style.display = "none";
-            }
+        function login() {
+            alert("✅ Login function works!");
         }
 
-        window.register = register;
-        window.toggleForm = toggleForm;
+        document.getElementById("auth-button").addEventListener("click", login);
     </script>
 </body>
 </html>
