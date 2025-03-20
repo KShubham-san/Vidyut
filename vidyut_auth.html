@@ -179,10 +179,37 @@
         });
 
         async function register() {
-            alert("✅ Register function called!");
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            const username = document.getElementById("username").value;
+            const dob = document.getElementById("dob").value;
+            const gender = document.getElementById("gender").value;
+            const stream = document.getElementById("stream").value;
+            const studentClass = document.getElementById("class").value;
+            const dailyTarget = document.getElementById("daily-target").value.trim();
+
+            if (!username || !dob || !gender || !stream || !studentClass || !dailyTarget) {
+                alert("⚠ Please fill all required fields!");
+                return;
+            }
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                await setDoc(doc(db, "users", user.uid), {
+                    username, email, dob, gender, stream, class: studentClass, dailyTarget
+                });
+
+                alert("✅ Registration successful!");
+                window.location.href = "dashboard.html";
+
+            } catch (error) {
+                alert("❌ Error: " + error.message);
+            }
         }
 
-        function login() {
+        async function login() {
             alert("✅ Login function works!");
         }
 
