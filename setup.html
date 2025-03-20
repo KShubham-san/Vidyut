@@ -21,7 +21,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh; /* Fixes the page movement issue */
         }
 
         .container {
@@ -29,7 +29,6 @@
             padding: 1.5rem;
             border-radius: 12px;
             width: 340px;
-            margin-top: 40px;
             box-shadow: 0px 4px 10px rgba(255, 215, 0, 0.3);
         }
 
@@ -118,7 +117,6 @@
     <div class="container">
         <h2><i class="fas fa-user-edit"></i> Profile Setup</h2>
 
-        <div class="input-group"><label for="name"><i class="fas fa-user"></i> Name</label><input type="text" id="name" placeholder="Enter your name"></div>
         <div class="input-group"><label for="dob"><i class="fas fa-calendar-alt"></i> Date of Birth</label><input type="date" id="dob"></div>
         <div class="input-group"><label for="gender"><i class="fas fa-venus-mars"></i> Gender</label>
             <select id="gender">
@@ -153,59 +151,51 @@
     </div>
 
     <script type="module">
-        import { db } from "./firebase.js";
-        import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        const firebaseConfig = { /* Your Firebase Config Here */ };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
         document.addEventListener("DOMContentLoaded", () => {
             const saveButton = document.getElementById("save-btn");
 
-            if (!saveButton) {
-                alert("❌ Save button NOT found!");
-                return;
-            }
-
-            console.log("✅ Save button found!");
-
             saveButton.addEventListener("click", async () => {
-                alert("🎉 Save button clicked!");
-
-                // Get input values
-                const name = document.getElementById("name").value.trim();
                 const dob = document.getElementById("dob").value;
                 const gender = document.getElementById("gender").value;
                 const stream = document.getElementById("stream").value;
                 const studentClass = document.getElementById("class").value;
                 const dailyTarget = document.getElementById("daily-target").value.trim();
 
-                // Check if all fields are filled
-                if (!name || !dob || !gender || !stream || !studentClass || !dailyTarget) {
+                if (!dob || !gender || !stream || !studentClass || !dailyTarget) {
                     alert("⚠️ Please fill all required fields!");
                     return;
                 }
 
-                try {
-                    // Generate a unique user ID (TEMPORARY)
-                    const userId = `user_${Date.now()}`;
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        await setDoc(doc(db, "users", user.uid), {
+                            dob,
+                            gender,
+                            stream,
+                            class: studentClass,
+                            dailyTarget
+                        }, { merge: true });
 
-                    // Save data to Firestore
-                    await setDoc(doc(db, "users", userId), {
-                        name: name,
-                        dob: dob,
-                        gender: gender,
-                        stream: stream,
-                        class: studentClass,
-                        dailyTarget: dailyTarget
-                    });
+                        localStorage.setItem("dob", dob);
+                        localStorage.setItem("gender", gender);
+                        localStorage.setItem("stream", stream);
+                        localStorage.setItem("class", studentClass);
+                        localStorage.setItem("dailyTarget", dailyTarget);
 
-                    alert("✅ Profile saved successfully!");
-                    console.log("✅ Data saved to Firestore!");
-
-                    // Redirect to dashboard
-                    window.location.href = "dashboard.html";
-                } catch (error) {
-                    console.error("❌ Error saving profile:", error);
-                    alert("❌ Failed to save profile. Try again.");
-                }
+                        alert("✅ Profile saved successfully!");
+                        window.location.href = "dashboard.html";
+                    }
+                });
             });
         });
     </script>

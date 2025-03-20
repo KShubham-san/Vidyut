@@ -144,7 +144,9 @@
                     email: email
                 });
 
-                localStorage.setItem("username", username); // Store username locally
+                // Save username locally for instant access
+                localStorage.setItem("username", username);
+
                 alert("Signup successful!");
                 window.location.href = "setup.html"; // Redirect new users to profile setup
 
@@ -165,6 +167,8 @@
                 const userDoc = await getDoc(doc(db, "users", user.uid));
                 if (userDoc.exists()) {
                     const username = userDoc.data().username;
+
+                    // Save username locally for instant access
                     localStorage.setItem("username", username);
                 }
 
@@ -202,20 +206,6 @@
                 usernameField.style.display = "none"; // Hide username field for login
             }
         }
-
-        // Auto-load username on any page
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                const userDoc = await getDoc(doc(db, "users", user.uid));
-                if (userDoc.exists()) {
-                    const username = userDoc.data().username;
-                    localStorage.setItem("username", username);
-                    if (document.getElementById("username-display")) {
-                        document.getElementById("username-display").textContent = username;
-                    }
-                }
-            }
-        });
 
         window.signup = signup;
         window.login = login;
