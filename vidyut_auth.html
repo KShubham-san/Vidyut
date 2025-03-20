@@ -16,7 +16,7 @@
 
         body, html {
             height: 100%;
-            overflow: hidden; /* Prevents page movement */
+            overflow: hidden;
         }
 
         body {
@@ -92,7 +92,6 @@
         a:hover {
             text-decoration: underline;
         }
-
     </style>
 </head>
 <body>
@@ -101,6 +100,7 @@
         <h2 id="form-title">Login</h2>
         <input type="email" placeholder="Email" id="email">
         <input type="password" placeholder="Password" id="password">
+        <input type="text" placeholder="Username" id="username" style="display: none;"> <!-- Hidden for login -->
         <button class="btn" id="auth-button" onclick="login()">Login</button>
         <p class="switch-text" id="switch-text">New here? <a href="#" onclick="toggleForm()">Create an account</a></p>
     </div>
@@ -108,7 +108,8 @@
     <!-- Firebase SDK & Authentication -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBK6ERxBeqllVW70VwMYs5Pss9oMGhShX8",
@@ -121,15 +122,29 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const db = getFirestore(app);
 
         async function signup() {
             const email = document.getElementById("email").value;
             const password = document.getElementById("password").value;
+            const username = document.getElementById("username").value;
+
+            if (!username) {
+                alert("Please enter a username.");
+                return;
+            }
 
             try {
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
 
+                // Store user data in Firestore
+                await setDoc(doc(db, "users", user.uid), {
+                    username: username,
+                    email: email
+                });
+
+                localStorage.setItem("username", username); // Store username locally
                 alert("Signup successful!");
                 window.location.href = "setup.html"; // Redirect new users to profile setup
 
@@ -145,6 +160,13 @@
             try {
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
+
+                // Fetch username from Firestore
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists()) {
+                    const username = userDoc.data().username;
+                    localStorage.setItem("username", username);
+                }
 
                 alert("Login successful!");
 
@@ -164,19 +186,36 @@
             const formTitle = document.getElementById("form-title");
             const authButton = document.getElementById("auth-button");
             const switchText = document.getElementById("switch-text");
+            const usernameField = document.getElementById("username");
 
             if (formTitle.innerText === "Login") {
                 formTitle.innerText = "Sign Up";
                 authButton.innerText = "Sign Up";
                 authButton.setAttribute("onclick", "signup()");
                 switchText.innerHTML = `Already have an account? <a href="#" onclick="toggleForm()">Login</a>`;
+                usernameField.style.display = "block"; // Show username field for signup
             } else {
                 formTitle.innerText = "Login";
                 authButton.innerText = "Login";
                 authButton.setAttribute("onclick", "login()");
                 switchText.innerHTML = `New here? <a href="#" onclick="toggleForm()">Create an account</a>`;
+                usernameField.style.display = "none"; // Hide username field for login
             }
         }
+
+        // Auto-load username on any page
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists()) {
+                    const username = userDoc.data().username;
+                    localStorage.setItem("username", username);
+                    if (document.getElementById("username-display")) {
+                        document.getElementById("username-display").textContent = username;
+                    }
+                }
+            }
+        });
 
         window.signup = signup;
         window.login = login;
