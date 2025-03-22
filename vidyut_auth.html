@@ -104,13 +104,19 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        function getDeviceId() {
-            return navigator.userAgent + "_" + Math.random().toString(36).substr(2, 9);
+        function getDeviceID() {
+            let deviceID = localStorage.getItem("vidyutDeviceID");
+            if (!deviceID) {
+                deviceID = crypto.randomUUID();
+                localStorage.setItem("vidyutDeviceID", deviceID);
+            }
+            return deviceID;
         }
 
         async function login() {
             let username = document.getElementById("username").value.trim();
             let loginButton = document.getElementById("login-button");
+
             if (!username) {
                 alert("⚠ Please enter a username!");
                 return;
@@ -121,78 +127,34 @@
 
             const userRef = doc(db, "users", username);
             const userDoc = await getDoc(userRef);
-            const deviceId = getDeviceId();
+            const deviceID = getDeviceID();
 
             if (!userDoc.exists()) {
                 await setDoc(userRef, {
                     joinedAt: new Date().toISOString(),
-                    approvedDevice: deviceId
+                    devices: { [deviceID]: true }
                 });
-                localStorage.setItem("vidyutUsername", username);
-                localStorage.setItem("vidyutDeviceId", deviceId);
-                window.location.href = "dashboard.html";
             } else {
                 const userData = userDoc.data();
-                if (userData.approvedDevice === deviceId) {
-                    localStorage.setItem("vidyutUsername", username);
-                    localStorage.setItem("vidyutDeviceId", deviceId);
-                    window.location.href = "dashboard.html";
-                } else {
-                    await updateDoc(userRef, { pendingApproval: deviceId, approvalTime: new Date().toISOString() });
-                    alert("⚠ New device detected. Waiting for approval from the original device.");
-                    waitForApproval(username, deviceId);
+                if (!userData.devices || !userData.devices[deviceID]) {
+                    const approval = confirm(`New device detected! Approve login for ${username}?`);
+                    if (!approval) {
+                        loginButton.innerText = "Continue";
+                        loginButton.disabled = false;
+                        return;
+                    }
+
+                    await updateDoc(userRef, {
+                        [`devices.${deviceID}`]: true
+                    });
                 }
             }
-        }
 
-        async function waitForApproval(username, deviceId) {
-            let attempts = 0;
-            const checkInterval = setInterval(async () => {
-                if (attempts >= 24) { 
-                    clearInterval(checkInterval);
-                    alert("❌ Approval timeout. Try again.");
-                    document.getElementById("login-button").innerText = "Continue";
-                    document.getElementById("login-button").disabled = false;
-                    return;
-                }
-
-                const userRef = doc(db, "users", username);
-                const userDoc = await getDoc(userRef);
-                const userData = userDoc.data();
-
-                if (userData.approvedDevice === deviceId) {
-                    clearInterval(checkInterval);
-                    localStorage.setItem("vidyutUsername", username);
-                    localStorage.setItem("vidyutDeviceId", deviceId);
-                    window.location.href = "dashboard.html";
-                }
-                attempts++;
-            }, 5000);
-        }
-
-        async function checkForPendingApprovals() {
-            const username = localStorage.getItem("vidyutUsername");
-            if (!username) return;
-
-            const userRef = doc(db, "users", username);
-            const userDoc = await getDoc(userRef);
-            const userData = userDoc.data();
-
-            if (userData.pendingApproval) {
-                const approve = confirm(`New device login attempt detected! Approve?`);
-                if (approve) {
-                    await updateDoc(userRef, { approvedDevice: userData.pendingApproval, pendingApproval: null });
-                    alert("✅ Device approved!");
-                } else {
-                    await updateDoc(userRef, { pendingApproval: null });
-                    alert("❌ Device login denied.");
-                }
-            }
+            localStorage.setItem("vidyutUsername", username);
+            window.location.href = "dashboard.html";
         }
 
         document.getElementById("login-button").addEventListener("click", login);
-
-        setInterval(checkForPendingApprovals, 5000);
     </script>
 </body>
 </html>
