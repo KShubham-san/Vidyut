@@ -130,24 +130,33 @@
             const deviceID = getDeviceID();
 
             if (!userDoc.exists()) {
+                // New user, create account with this device approved
                 await setDoc(userRef, {
                     joinedAt: new Date().toISOString(),
                     devices: { [deviceID]: true }
                 });
             } else {
                 const userData = userDoc.data();
-                if (!userData.devices || !userData.devices[deviceID]) {
-                    const approval = confirm(`New device detected! Approve login for ${username}?`);
-                    if (!approval) {
-                        loginButton.innerText = "Continue";
-                        loginButton.disabled = false;
-                        return;
-                    }
 
-                    await updateDoc(userRef, {
-                        [`devices.${deviceID}`]: true
-                    });
+                // If user has device list and current device is already approved
+                if (userData.devices && userData.devices[deviceID]) {
+                    localStorage.setItem("vidyutUsername", username);
+                    window.location.href = "dashboard.html";
+                    return;
                 }
+
+                // If new device, ask for approval
+                const approval = confirm(`New device detected! Approve login for ${username}?`);
+                if (!approval) {
+                    loginButton.innerText = "Continue";
+                    loginButton.disabled = false;
+                    return;
+                }
+
+                // Save new device as approved
+                await updateDoc(userRef, {
+                    [`devices.${deviceID}`]: true
+                });
             }
 
             localStorage.setItem("vidyutUsername", username);
