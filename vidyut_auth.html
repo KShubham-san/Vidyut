@@ -30,6 +30,7 @@
             padding: 2rem;
             border-radius: 10px;
             width: 320px;
+            position: relative;
         }
 
         h1 {
@@ -77,6 +78,36 @@
             color: #bbb;
             margin-top: 10px;
         }
+
+        /* Loader Animation */
+        .loader {
+            display: none;
+            width: 25px;
+            height: 25px;
+            border: 3px solid #fff;
+            border-top: 3px solid #ffd700;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 10px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .notification {
+            position: absolute;
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -84,14 +115,17 @@
     <div class="container">
         <h2>Welcome</h2>
         <input type="text" placeholder="Enter Username" id="username">
-        <p class="info-text">Enter your username and continue. If you're new, this will create an account!</p>
+        <p class="info-text">Enter your username to continue. If new, an account will be created.</p>
         <button class="btn" id="login-button">Continue</button>
+        <div class="loader" id="loader"></div>
+        <div class="notification" id="notification"></div>
     </div>
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
+        // Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyBK6ERxBeqllVW70VwMYs5Pss9oMGhShX8",
             authDomain: "vidyut-b88c5.firebaseapp.com",
@@ -104,32 +138,64 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-       async function login() {
-    let username = document.getElementById("username").value.trim();
-    let loginButton = document.getElementById("login-button");
+        // Function to generate or get device ID
+        function getDeviceId() {
+            let deviceId = localStorage.getItem("deviceId");
+            if (!deviceId) {
+                deviceId = "dev-" + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem("deviceId", deviceId);
+            }
+            return deviceId;
+        }
 
-    if (!username) {
-        alert("⚠ Please enter a username!");
-        return;
-    }
+        async function login() {
+            let username = document.getElementById("username").value.trim();
+            let loginButton = document.getElementById("login-button");
+            let loader = document.getElementById("loader");
 
-    loginButton.innerText = "Checking... ⏳";
-    loginButton.disabled = true;
+            if (!username) {
+                showNotification("⚠ Please enter a username!", "error");
+                return;
+            }
 
-    const userRef = doc(db, "users", username);
-    const userDoc = await getDoc(userRef);
+            loginButton.style.display = "none";
+            loader.style.display = "block";
 
-    if (!userDoc.exists()) {
-        await setDoc(userRef, { joinedAt: new Date().toISOString() });
-    }
+            const userRef = doc(db, "users", username);
+            const userDoc = await getDoc(userRef);
+            const deviceId = getDeviceId();
 
-    localStorage.setItem("vidyutUsername", username);
-    alert("✅ Welcome, " + username + "!");
+            if (!userDoc.exists()) {
+                // New user - Create an account
+                await setDoc(userRef, { joinedAt: new Date().toISOString(), deviceId: deviceId });
+                showNotification("✅ Account created! Welcome, " + username + "!", "success");
+            } else {
+                // Existing user - Check if device matches
+                if (userDoc.data().deviceId !== deviceId) {
+                    showNotification("❌ Username linked to another device! Approving...", "warning");
 
-    window.location.href = "dashboard.html";
-}
+                    // Allow multi-device login with approval
+                    await updateDoc(userRef, { approvedDevice: deviceId });
+
+                    showNotification("✅ Approved! Logging in...", "success");
+                }
+            }
+
+            localStorage.setItem("vidyutUsername", username);
+            setTimeout(() => { window.location.href = "dashboard.html"; }, 1500);
+        }
+
+        // Function to show notifications
+        function showNotification(message, type) {
+            let notification = document.getElementById("notification");
+            notification.innerText = message;
+            notification.style.display = "block";
+            notification.style.backgroundColor = type === "error" ? "#ff4d4d" : type === "warning" ? "#ffa500" : "#00c853";
+
+            setTimeout(() => { notification.style.display = "none"; }, 3000);
+        }
 
         document.getElementById("login-button").addEventListener("click", login);
     </script>
 </body>
-</html>
+    </html>
